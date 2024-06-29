@@ -1,26 +1,35 @@
-// BalanceDisplay.tsx
+// components/BalanceDisplay.tsx
 
+import { FC, useEffect, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { FC, useEffect, useState } from 'react'
+import * as web3 from '@solana/web3.js';
 
 export const BalanceDisplay: FC = () => {
     const { connection } = useConnection();
     const { publicKey } = useWallet();
+    const [balance, setBalance] = useState<number | null>(null);
 
     useEffect(() => {
-        if (!connection || !publicKey) { return }
+        const fetchBalance = async () => {
+            if (!connection || !publicKey) {
+                return;
+            }
 
-        // Subscribe to account changes (optional, depending on your app flow)
-        const onAccountChange = (updatedAccountInfo) => {
-            // Handle account change if needed
+            try {
+                const balance = await connection.getBalance(publicKey);
+                setBalance(balance / web3.LAMPORTS_PER_SOL);
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+            }
         };
 
-        connection.onAccountChange(publicKey, onAccountChange, 'confirmed');
+        fetchBalance();
+    }, [connection, publicKey]);
 
-        // Cleanup function to unsubscribe (if necessary)
-        return () => connection.removeAccountChangeListener(publicKey);
-    }, [connection, publicKey])
-
-    return null; // No display of balance
-}
+    return (
+        <div>
+            <h3>Your Balance:</h3>
+            {balance !== null ? <p>{balance} SOL</p> : <p>Loading...</p>}
+        </div>
+    );
+};
