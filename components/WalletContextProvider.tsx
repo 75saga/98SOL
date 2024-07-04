@@ -1,25 +1,27 @@
-
+// walletcontextprovider.tsx
 import { FC, ReactNode } from "react";
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import * as web3 from '@solana/web3.js'
+import * as web3 from '@solana/web3.js';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-require('@solana/wallet-adapter-react-ui/styles.css')
+require('@solana/wallet-adapter-react-ui/styles.css');
 
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const wallets = [new PhantomWalletAdapter()]
+    const wallets = [new PhantomWalletAdapter()];
 
-    const endpoint = web3.clusterApiUrl('mainnet-beta')
+    const endpoint = process.env.NEXT_PUBLIC_SOLANA_ENDPOINT || web3.clusterApiUrl('mainnet-beta');
+
+    const connection = new web3.Connection(endpoint);
 
     return (
-        <ConnectionProvider endpoint={endpoint}>
+        <ConnectionProvider connection={connection}>
             <WalletProvider wallets={wallets}>
                 <WalletModalProvider>
-                    { children }
+                    {children}
                 </WalletModalProvider>
             </WalletProvider>
         </ConnectionProvider>
-    )
-}
+    );
+};
 
-export default WalletContextProvider
+export default WalletContextProvider;
