@@ -9,12 +9,10 @@ require('@solana/wallet-adapter-react-ui/styles.css');
 const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const wallets = [new PhantomWalletAdapter()];
 
-    const endpoint = process.env.NEXT_PUBLIC_SOLANA_ENDPOINT || web3.clusterApiUrl('mainnet-beta');
-
-    const connection = new web3.Connection(endpoint);
+    const endpoint = process.env.NEXT_PUBLIC_HELIUS_RPC_ENDPOINT;
 
     return (
-        <ConnectionProvider connection={connection}>
+        <ConnectionProvider endpoint={endpoint}>
             <WalletProvider wallets={wallets}>
                 <WalletModalProvider>
                     {children}
